@@ -223,7 +223,7 @@ def run(command):
 
 def ansi(string, style):
     if R.ansi:
-        return '\x1b[{}m{}\x1b[0m'.format(style, string)
+        return '\x1b[{0}m{1}\x1b[0m'.format(style, string)
     else:
         return string
 
@@ -281,17 +281,14 @@ def to_string(value):
 
 def format_address(address):
     pointer_size = gdb.parse_and_eval('$pc').type.sizeof
-    return ('0x{{:0{}x}}').format(pointer_size * 2).format(address)
+    return ('0x{{0:0{0}x}}').format(pointer_size * 2).format(address)
 
 def format_value(value, compact=None):
     # format references as referenced values
     # (TYPE_CODE_RVALUE_REF is not supported by old GDB)
     if value.type.code in (getattr(gdb, 'TYPE_CODE_REF', None),
                            getattr(gdb, 'TYPE_CODE_RVALUE_REF', None)):
-        try:
-            value = value.referenced_value()
-        except gdb.MemoryError as e:
-            return ansi(e, R.style_error)
+        value = value.referenced_value()
     # format the value
     out = to_string(value)
     # dereference up to the actual value if requested
@@ -303,7 +300,7 @@ def format_value(value, compact=None):
                 break
         else:
             formatted = to_string(value)
-            out += '{} {}'.format(ansi(':', R.style_low), formatted)
+            out += '{0} {1}'.format(ansi(':', R.style_low), formatted)
     # compact the value
     if compact is not None and compact or R.compact_values:
         out = re.sub(r'$\s*', '', out, flags=re.MULTILINE)
@@ -551,7 +548,7 @@ class Dashboard(gdb.Command):
                 fs.write(buf)
             except Exception as e:
                 cause = traceback.format_exc().strip()
-                Dashboard.err('Cannot write the dashboard\n{}'.format(cause))
+                Dashboard.err('Cannot write the dashboard\n{0}'.format(cause))
             finally:
                 # don't close gdb stream
                 if fs and fs is not gdb:
@@ -687,7 +684,7 @@ class Dashboard(gdb.Command):
             self.output = None  # value from the dashboard by default
             self.instance = module()
             self.doc = self.instance.__doc__ or '(no documentation)'
-            self.prefix = 'dashboard {}'.format(self.name)
+            self.prefix = 'dashboard {0}'.format(self.name)
             # add GDB commands
             self.add_main_command(dashboard)
             self.add_output_command(dashboard)
@@ -704,11 +701,11 @@ class Dashboard(gdb.Command):
                         dashboard.redisplay()
                     else:
                         status = 'enabled' if info.enabled else 'disabled'
-                        print('{} module {}'.format(module.name, status))
+                        print('{1} module {1}'.format(module.name, status))
                 else:
-                    Dashboard.err('Wrong argument "{}"'.format(arg))
-            doc_brief = 'Configure the {} module, with no arguments toggles its visibility.'.format(self.name)
-            doc = '{}\n\n{}'.format(doc_brief, self.doc)
+                    Dashboard.err('Wrong argument "{0}"'.format(arg))
+            doc_brief = 'Configure the {0} module, with no arguments toggles its visibility.'.format(self.name)
+            doc = '{0}\n\n{1}'.format(doc_brief, self.doc)
             Dashboard.create_command(self.prefix, invoke, doc, True)
 
         def add_output_command(self, dashboard):
@@ -737,7 +734,7 @@ class Dashboard(gdb.Command):
                     dashboard.redisplay()
                 else:
                     Dashboard.err('Module disabled')
-            prefix = '{} {}'.format(self.prefix, name)
+            prefix = '{0} {1}'.format(self.prefix, name)
             Dashboard.create_command(prefix, invoke, doc, False, complete)
 
 # GDB commands -----------------------------------------------------------------
@@ -747,7 +744,7 @@ class Dashboard(gdb.Command):
         arg = Dashboard.parse_arg(arg)
         # show messages for checks in redisplay
         if arg != '':
-            Dashboard.err('Wrong argument "{}"'.format(arg))
+            Dashboard.err('Wrong argument "{0}"'.format(arg))
         elif not self.is_running():
             Dashboard.err('Is the target program running?')
         else:
@@ -797,7 +794,7 @@ configuration files must be placed.'''
             layout = ['dashboard -layout']
             for module in self.dashboard.modules:
                 mark = '' if module.enabled else '!'
-                layout.append('{}{}'.format(mark, module.name))
+                layout.append('{0}{1}'.format(mark, module.name))
             fs.write(' '.join(layout))
             fs.write('\n')
 
@@ -808,12 +805,12 @@ configuration files must be placed.'''
                 default = attribute.get('default')
                 value = getattr(obj, real_name)
                 if value != default:
-                    fs.write('{} -style {} {!r}\n'.format(prefix, name, value))
+                    fs.write('{0} -style {1} {2:!r}\n'.format(prefix, name, value))
 
         def dump_output(self, fs, obj, prefix='dashboard'):
             output = getattr(obj, 'output')
             if output:
-                fs.write('{} -output {}\n'.format(prefix, output))
+                fs.write('{0} -output {1}\n'.format(prefix, output))
 
     class OutputCommand(gdb.Command):
         '''Set the output file/TTY for the whole dashboard or single modules.
@@ -874,14 +871,14 @@ The current status is printed if no argument is present.'''
             arg = Dashboard.parse_arg(arg)
             if arg == '':
                 status = 'enabled' if self.dashboard.enabled else 'disabled'
-                print('The dashboard is {}'.format(status))
+                print('The dashboard is {0}'.format(status))
             elif arg == 'on':
                 self.dashboard.enable()
                 self.dashboard.redisplay()
             elif arg == 'off':
                 self.dashboard.disable()
             else:
-                msg = 'Wrong argument "{}"; expecting "on" or "off"'
+                msg = 'Wrong argument "{0}"; expecting "on" or "off"'
                 Dashboard.err(msg.format(arg))
 
         def complete(self, text, word):
@@ -952,10 +949,10 @@ Passing `!` as a single argument resets the dashboard original layout.'''
                 enabled = (directive[0] != '!')
                 name = directive[not enabled:]
                 if name in selected_modules:
-                    Dashboard.err('Module "{}" already set'.format(name))
+                    Dashboard.err('Module "{0}" already set'.format(name))
                     return False
                 if next((False for module in modules if module.name == name), True):
-                    Dashboard.err('Cannot find module "{}"'.format(name))
+                    Dashboard.err('Cannot find module "{0}"'.format(name))
                     return False
                 parsed_directives.append((name, enabled))
                 selected_modules.add(name)
@@ -1015,14 +1012,14 @@ literals and converted to the proper type. '''
                     if new_value == '':
                         # print the current value
                         value = getattr(this.obj, attr_name)
-                        print('{} = {!r}'.format(name, value))
+                        print('{0} = {1:!r}'.format(name, value))
                     else:
                         try:
                             # convert and check the new value
                             parsed = ast.literal_eval(new_value)
                             value = attr_type(parsed)
                             if not attr_check(value):
-                                msg = 'Invalid value "{}" for "{}"'
+                                msg = 'Invalid value "{0}" for "{1}"'
                                 raise Exception(msg.format(new_value, name))
                         except Exception as e:
                             Dashboard.err(e)
@@ -1037,13 +1034,13 @@ literals and converted to the proper type. '''
         def invoke(self, arg, from_tty):
             # an argument here means that the provided attribute is invalid
             if arg:
-                Dashboard.err('Invalid argument "{}"'.format(arg))
+                Dashboard.err('Invalid argument "{0}"'.format(arg))
                 return
             # print all the pairs
             for name, attribute in self.attributes.items():
                 attr_name = attribute.get('name', name)
                 value = getattr(self.obj, attr_name)
-                print('{} = {!r}'.format(name, value))
+                print('{0} = {1:!r}'.format(name, value))
 
 # Base module ------------------------------------------------------------------
 
@@ -1175,7 +1172,7 @@ class Source(Dashboard.Module):
                 self.file_name = file_name
                 self.ts = ts
             except IOError as e:
-                msg = 'Cannot display "{}"'.format(file_name)
+                msg = 'Cannot display "{0}"'.format(file_name)
                 return [ansi(msg, R.style_error)]
         # compute the line range
         height = self.height or (term_height - 1)
@@ -1196,7 +1193,7 @@ class Source(Dashboard.Module):
         # return the source code listing
         breakpoints = fetch_breakpoints()
         out = []
-        number_format = '{{:>{}}}'.format(len(str(end)))
+        number_format = '{{1:>{0}}}'.format(len(str(end)))
         for number, line in enumerate(self.source_lines[start:end], start + 1):
             # properly handle UTF-8 source files
             line = to_string(line)
@@ -1204,14 +1201,14 @@ class Source(Dashboard.Module):
                 # the current line has a different style without ANSI
                 if R.ansi:
                     if self.highlighted:
-                        line_format = '{}' + ansi(number_format, R.style_selected_1) + '  {}'
+                        line_format = '{0}' + ansi(number_format, R.style_selected_1) + '  {2}'
                     else:
-                        line_format = '{}' + ansi(number_format + '  {}', R.style_selected_1)
+                        line_format = '{0}' + ansi(number_format + '  {2}', R.style_selected_1)
                 else:
                     # just show a plain text indicator
-                    line_format = '{}' + number_format + '> {}'
+                    line_format = '{0}' + number_format + '> {2}'
             else:
-                line_format = '{}' + ansi(number_format, R.style_low) + '  {}'
+                line_format = '{0}' + ansi(number_format, R.style_low) + '  {2}'
             # check for breakpoint presence
             enabled = None
             for breakpoint in breakpoints:
@@ -1342,7 +1339,7 @@ The instructions constituting the current statement are marked, if available.'''
                 extra_end = 0
                 asm = self.fetch_asm(frame.pc(), height, True, highlighter)
             except gdb.error as e:
-                msg = '{}'.format(e)
+                msg = '{0}'.format(e)
                 return [ansi(msg, R.style_error)]
         # fetch function start if available (e.g., not with @plt)
         func_start = None
@@ -1374,7 +1371,7 @@ The instructions constituting the current statement are marked, if available.'''
                 if func_start:
                     offset = '{:+d}'.format(addr - func_start)
                     offset = offset.ljust(max_offset + 1)  # sign
-                    func_info = '{}{}'.format(frame.function(), offset)
+                    func_info = '{0}{1}'.format(frame.function(), offset)
                 else:
                     func_info = '?'
             else:
@@ -1486,7 +1483,7 @@ class Variables(Dashboard.Module):
 
     def lines(self, term_width, term_height, style_changed):
         return Variables.format_frame(
-            gdb.selected_frame(), self.show_arguments, self.show_locals, self.compact, self.align)
+            gdb.selected_frame(), self.show_arguments, self.show_locals, self.compact)
 
     def attributes(self):
         return {
@@ -1506,16 +1503,11 @@ class Variables(Dashboard.Module):
                 'doc': 'Single-line display flag.',
                 'default': True,
                 'type': bool
-            },
-            'align': {
-                'doc': 'Align variables in column flag (only if not compact).',
-                'default': False,
-                'type': bool
             }
         }
 
     @staticmethod
-    def format_frame(frame, show_arguments, show_locals, compact, align):
+    def format_frame(frame, show_arguments, show_locals, compact):
         out = []
         # fetch frame arguments and locals
         decorator = gdb.FrameDecorator.FrameDecorator(frame)
@@ -1524,7 +1516,7 @@ class Variables(Dashboard.Module):
             def prefix(line):
                 return Stack.format_line('arg', line)
             frame_args = decorator.frame_args()
-            args_lines = Variables.fetch(frame, frame_args, compact, align)
+            args_lines = Variables.fetch(frame, frame_args, compact)
             if args_lines:
                 if compact:
                     args_line = separator.join(args_lines)
@@ -1536,7 +1528,7 @@ class Variables(Dashboard.Module):
             def prefix(line):
                 return Stack.format_line('loc', line)
             frame_locals = decorator.frame_locals()
-            locals_lines = Variables.fetch(frame, frame_locals, compact, align)
+            locals_lines = Variables.fetch(frame, frame_locals, compact)
             if locals_lines:
                 if compact:
                     locals_line = separator.join(locals_lines)
@@ -1547,13 +1539,10 @@ class Variables(Dashboard.Module):
         return out
 
     @staticmethod
-    def fetch(frame, data, compact, align):
+    def fetch(frame, data, compact):
         lines = []
-        name_width = 0
-        if align and not compact:
-            name_width = max(len(str(elem.sym)) for elem in data) if data else 0
         for elem in data or []:
-            name = ansi(elem.sym, R.style_high) + ' ' * (name_width - len(str(elem.sym)))
+            name = ansi(elem.sym, R.style_high)
             equal = ansi('=', R.style_low)
             value = format_value(elem.sym.value(frame), compact)
             lines.append('{} {} {}'.format(name, equal, value))
@@ -1591,9 +1580,9 @@ Optionally list the frame arguments and locals too.'''
             frame_id = ansi(str(number), style)
             info = Stack.get_pc_line(frame, style)
             frame_lines = []
-            frame_lines.append('[{}] {}'.format(frame_id, info))
+            frame_lines.append('[{0}] {1}'.format(frame_id, info))
             # add frame arguments and locals
-            variables = Variables.format_frame(frame, self.show_arguments, self.show_locals, self.compact, self.align)
+            variables = Variables.format_frame(frame, self.show_arguments, self.show_locals, self.compact)
             frame_lines.extend(variables)
             # add frame
             frames.append(frame_lines)
@@ -1612,7 +1601,7 @@ Optionally list the frame arguments and locals too.'''
             lines.extend(frame_lines)
         # add the placeholder
         if more:
-            lines.append('[{}]'.format(ansi('+', R.style_selected_2)))
+            lines.append('[{0}]'.format(ansi('+', R.style_selected_2)))
         return lines
 
     def attributes(self):
@@ -1639,33 +1628,28 @@ Optionally list the frame arguments and locals too.'''
                 'doc': 'Single-line display flag.',
                 'default': False,
                 'type': bool
-            },
-            'align': {
-                'doc': 'Align variables in column flag (only if not compact).',
-                'default': False,
-                'type': bool
             }
         }
 
     @staticmethod
     def format_line(prefix, line):
         prefix = ansi(prefix, R.style_low)
-        return '{} {}'.format(prefix, line)
+        return '{0} {1}'.format(prefix, line)
 
     @staticmethod
     def get_pc_line(frame, style):
         frame_pc = ansi(format_address(frame.pc()), style)
-        info = 'from {}'.format(frame_pc)
+        info = 'from {0}'.format(frame_pc)
         if frame.function():
             name = ansi(frame.function(), style)
             func_start = to_unsigned(frame.function().value())
             offset = ansi(str(frame.pc() - func_start), style)
-            info += ' in {}+{}'.format(name, offset)
+            info += ' in {0}+{1}'.format(name, offset)
         sal = frame.find_sal()
         if sal and sal.symtab:
             file_name = ansi(sal.symtab.filename, style)
             file_line = ansi(str(sal.line), style)
-            info += ' at {}:{}'.format(file_name, file_line)
+            info += ' at {0}:{1}'.format(file_name, file_line)
         return info
 
 class History(Dashboard.Module):
@@ -1680,9 +1664,9 @@ class History(Dashboard.Module):
         for i in range(-self.limit + 1, 1):
             try:
                 value = format_value(gdb.history(i))
-                value_id = ansi('$${}', R.style_high).format(abs(i))
+                value_id = ansi('$${0}', R.style_high).format(abs(i))
                 equal = ansi('=', R.style_low)
-                line = '{} {} {}'.format(value_id, equal, value)
+                line = '{0} {1} {2}'.format(value_id, equal, value)
                 out.append(line)
             except gdb.error:
                 continue
@@ -1725,7 +1709,7 @@ class Memory(Dashboard.Module):
                 if not self.original:
                     self.original = memory
             except gdb.error as e:
-                msg = 'Cannot access {} bytes starting at {}: {}'
+                msg = 'Cannot access {0} bytes starting at {1}: {2}'
                 msg = msg.format(self.length, self.expression, e)
                 return [ansi(msg, R.style_error)]
             # format the memory content
@@ -1740,7 +1724,7 @@ class Memory(Dashboard.Module):
                 for j in range(len(region)):
                     rel = i + j
                     byte = memory[rel]
-                    hexa_byte = '{:02x}'.format(ord(byte))
+                    hexa_byte = '{0:02x}'.format(ord(byte))
                     text_byte = self.module.format_byte(byte)
                     # differences against the latest have the highest priority
                     if self.latest and memory[rel] != self.latest[rel]:
@@ -1756,9 +1740,9 @@ class Memory(Dashboard.Module):
                     hexa.append(hexa_byte)
                     text.append(text_byte)
                 # output the formatted line
-                hexa_placeholder = ' {}'.format(self.module.placeholder[0] * 2)
+                hexa_placeholder = ' {0}'.format(self.module.placeholder[0] * 2)
                 text_placeholder = self.module.placeholder[0]
-                out.append('{}  {}{}  {}{}'.format(
+                out.append('{0}  {1}{2}  {3}{4}'.format(
                     ansi(address_str, R.style_low),
                     ' '.join(hexa), ansi(pad * hexa_placeholder, R.style_low),
                     ''.join(text), ansi(pad * text_placeholder, R.style_low)))
@@ -1890,7 +1874,7 @@ class Registers(Dashboard.Module):
             # Exclude registers with a dot '.' or parse_and_eval() will fail
             if '.' in name:
                 continue
-            value = gdb.parse_and_eval('${}'.format(name))
+            value = gdb.parse_and_eval('${0}'.format(name))
             string_value = Registers.format_value(value)
             changed = self.table and (self.table.get(name, '') != string_value)
             self.table[name] = string_value
@@ -1931,7 +1915,7 @@ class Registers(Dashboard.Module):
                 style = R.style_selected_1 if changed else ''
                 value = ansi(value, style) + ' ' * (max_value - len(value))
                 padding = ' ' * padding_column[i]
-                item = '{}{} {}'.format(padding, name, value)
+                item = '{0}{1} {2}'.format(padding, name, value)
                 out[j] += item
         return out
 
@@ -2038,9 +2022,6 @@ class Expressions(Dashboard.Module):
 
     def lines(self, term_width, term_height, style_changed):
         out = []
-        label_width = 0
-        if self.align:
-            label_width = max(len(expression) for expression in self.table) if self.table else 0
         default_radix = Expressions.get_default_radix()
         for expression in self.table:
             label = expression
@@ -2055,9 +2036,9 @@ class Expressions(Dashboard.Module):
             finally:
                 if match:
                     run('set output-radix {}'.format(default_radix))
-            label = ansi(expression, R.style_high) + ' ' * (label_width - len(expression))
+            expression = ansi(label, R.style_high)
             equal = ansi('=', R.style_low)
-            out.append('{} {} {}'.format(label, equal, value))
+            out.append('{} {} {}'.format(expression, equal, value))
         return out
 
     def commands(self):
@@ -2075,15 +2056,6 @@ class Expressions(Dashboard.Module):
             'clear': {
                 'action': self.clear,
                 'doc': 'Clear all the watched expressions.'
-            }
-        }
-
-    def attributes(self):
-        return {
-            'align': {
-                'doc': 'Align variables in column flag.',
-                'default': False,
-                'type': bool
             }
         }
 
@@ -2207,11 +2179,20 @@ end
 # Better GDB defaults ----------------------------------------------------------
 
 set history save
+set confirm off
 set verbose off
 set print pretty on
 set print array off
 set print array-indexes on
-set python print-stack full
+# set python print-stack full
+
+# Additional
+set print object on
+set print static-members on
+set print vtbl on
+set print demangle on
+set print sevenbit-strings off
+set demangle-style gnu-v3
 
 # Start ------------------------------------------------------------------------
 
@@ -2223,3 +2204,8 @@ python Dashboard.start()
 # Local Variables:
 # mode: python
 # End:
+
+# Additional dashboard selection
+dashboard stack -style limit 1
+dashboard -layout source !assembly stack !registers !threads !history !expressions !memory
+# ------------------------------------------------------------------------------
